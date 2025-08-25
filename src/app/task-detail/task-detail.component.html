@@ -1,0 +1,225 @@
+<div class="task-detail-container">
+  <!-- Header -->
+  <div class="task-header">
+    <button class="back-btn" routerLink="/dashboard">
+      <span class="back-arrow">←</span>
+    </button>
+    <div class="header-content">
+      <h1>Task Details</h1>
+      <p>View and edit task information</p>
+    </div>
+  </div>
+
+  <!-- Top Action Buttons -->
+  <div class="top-actions">
+    <button class="btn btn-secondary" (click)="toggleEdit()">
+      <span class="edit-icon">✏️</span>
+      Edit Task
+    </button>
+    <button class="btn btn-primary" (click)="markComplete()">
+      <span class="complete-icon">⏰</span>
+      Mark Complete
+    </button>
+  </div>
+
+  <!-- Left Column - Task Details -->
+  <div class="task-details-column">
+    <!-- Task Information Section -->
+    <form [formGroup]="taskForm" (ngSubmit)="saveChanges()" class="task-information-section">
+      <h2>Task Information</h2>
+      
+      <!-- Task Title and Labels -->
+      <div class="task-title-section">
+        <div *ngIf="!isEditing" class="task-title-display">
+          <h3>{{ task().title }}</h3>
+          <div class="task-labels">
+            <span class="task-priority" [class]="getPriorityClass(task().priority)">
+              {{ task().priority }} priority
+            </span>
+            <span class="task-status" [class]="getStatusClass(task().status)">
+              {{ getStatusIcon(task().status) }} {{ task().status }}
+            </span>
+          </div>
+        </div>
+        
+        <div *ngIf="isEditing" class="task-title-edit">
+          <div class="form-group">
+            <label for="title" class="form-label">Task Title *</label>
+            <input 
+              type="text" 
+              id="title"
+              formControlName="title"
+              class="form-input"
+              [class.error]="hasError('title', 'required') || hasError('title', 'minlength')"
+            >
+            <div class="error-message" *ngIf="hasError('title', 'required')">
+              ⚠ Task title is required
+            </div>
+            <div class="error-message" *ngIf="hasError('title', 'minlength')">
+              ⚠ Task title must be at least 3 characters
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Task Description -->
+      <div class="task-description-section">
+        <h3>Description</h3>
+        <div *ngIf="!isEditing" class="task-description-display">
+          <p>{{ task().description }}</p>
+        </div>
+        
+        <div *ngIf="isEditing" class="task-description-edit">
+          <div class="form-group">
+            <textarea 
+              formControlName="description"
+              class="form-textarea"
+              rows="4"
+                                      [class.error]="hasError('description', 'minlength')"
+            ></textarea>
+            
+            <div class="error-message" *ngIf="hasError('description', 'minlength')">
+              ⚠ Description must be at least 5 characters
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Task Details -->
+      <div class="task-details-section">
+        <div *ngIf="!isEditing" class="task-details-display">
+          <div class="detail-item">
+            <span class="calendar-icon">📅</span>
+            <span class="detail-text">Due: {{ formatDate(task().dueDate) }}</span>
+          </div>
+        </div>
+        
+        <div *ngIf="isEditing" class="task-details-edit">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="priority" class="form-label">Priority</label>
+              <select 
+                id="priority"
+                formControlName="priority"
+                class="form-select"
+              >
+                <option value="Low Priority">Low Priority</option>
+                <option value="Medium Priority">Medium Priority</option>
+                <option value="High Priority">High Priority</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="status" class="form-label">Status</label>
+              <select 
+                id="status"
+                formControlName="status"
+                class="form-select"
+              >
+                <option value="pending">Pending</option>
+                <option value="in-progress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="dueDate" class="form-label">Due Date</label>
+            <div class="date-input-container">
+              <input 
+                type="date" 
+                id="dueDate"
+                formControlName="dueDate"
+                class="form-input date-input"
+              >
+              <span class="calendar-icon">📅</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Mode Action Buttons -->
+      <div *ngIf="isEditing" class="edit-actions">
+        <button type="submit" class="btn btn-primary">
+          <span class="save-icon">💾</span>
+          Save Changes
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="cancelEdit()">
+          Cancel
+        </button>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="danger-zone">
+        <h3>Danger Zone</h3>
+        <div class="danger-content">
+          <div class="danger-text">
+            <p class="danger-title">Delete this task permanently</p>
+            <p class="danger-subtitle">This action cannot be undone</p>
+          </div>
+          <button class="btn btn-danger" (click)="showDeleteConfirmation()">
+            <span class="delete-icon">🗑️</span>
+            Delete Task
+          </button>
+        </div>
+        
+        <!-- Inline Delete Confirmation -->
+        <div class="delete-confirmation" *ngIf="showDeleteModal()">
+          <div class="confirmation-content">
+            <div class="confirmation-message">
+              <div class="warning-icon">!</div>
+              <p>Are you sure you want to delete this task? This action cannot be undone.</p>
+            </div>
+            <div class="confirmation-actions">
+              <button class="btn btn-danger" (click)="deleteTask()">
+                Yes, Delete Task
+              </button>
+              <button class="btn btn-secondary" (click)="hideDeleteConfirmation()">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Right Column - Quick Actions and Metadata -->
+  <div class="quick-actions-column">
+    <!-- Quick Actions Section -->
+    <div class="quick-actions-section">
+      <h3>Quick Actions</h3>
+      <div class="quick-actions-list">
+        <button class="btn btn-primary" (click)="markComplete()">
+          <span class="complete-icon">⏰</span>
+          Mark Complete
+        </button>
+        <button class="btn btn-secondary" (click)="toggleEdit()">
+          <span class="edit-icon">✏️</span>
+          Edit Task
+        </button>
+      </div>
+    </div>
+
+                    <!-- Task Metadata Section -->
+                <div class="task-metadata-section">
+                  <h3>Task Metadata</h3>
+                  <div class="metadata-list">
+                    <div class="metadata-item">
+                      <span class="metadata-label">Created:</span>
+                      <span class="metadata-value">{{ formatDate(task().createdAt) }}</span>
+                    </div>
+                    <div class="metadata-item">
+                      <span class="metadata-label">Last Updated:</span>
+                      <span class="metadata-value">{{ formatDate(task().lastUpdated) }}</span>
+                    </div>
+                    <div class="metadata-item">
+                      <span class="metadata-label">Task ID:</span>
+                      <span class="metadata-value">{{ task().id }}</span>
+                    </div>
+                  </div>
+                </div>
+  </div>
+</div>
+
+
